@@ -1,6 +1,20 @@
-# 🩺 Mender
+<h1 align="center">🩺 Mender</h1>
 
-**A GitHub App that diagnoses failed CI runs on pull requests and posts the root cause, plus a fix it has checked against your code.**
+<p align="center">
+  <b>Your failed CI, explained.</b><br>
+  A GitHub App that diagnoses failed CI runs on pull requests and posts the root cause, plus a fix it has checked against your code.
+</p>
+
+<p align="center">
+  <a href="https://github.com/Shibin506/mender/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Shibin506/mender/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776ab?logo=python&logoColor=white">
+  <img alt="Postgres" src="https://img.shields.io/badge/queue-Postgres%20SKIP%20LOCKED-336791?logo=postgresql&logoColor=white">
+  <img alt="Claude" src="https://img.shields.io/badge/model-Claude-d97757">
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-16a34a"></a>
+</p>
+
+<p align="center"><img src="docs/images/demo.gif" alt="A terminal: a 2,783-line failed GitHub Actions log is cut down to the one failing pytest assertion and rendered as a PR comment; then the held-out eval prints its table, keeping the error line in all 10 cases; then the Postgres concurrency test passes" width="900"></p>
+<p align="center"><sub>Real terminal output, sped up (<a href="docs/demo.mp4">MP4</a>). The Claude step is switched off here (<code>--no-llm</code>) because it needs an API key.</sub></p>
 
 When a workflow fails on a PR, Mender reads the failed job logs, cuts them down to the few lines that matter, and works out the root cause with Claude, using the PR diff and the files the log points at. It posts one comment on the PR and keeps it updated. Any patch it suggests is first applied, in memory, to the PR's head commit. A patch that doesn't apply cleanly is never shown.
 

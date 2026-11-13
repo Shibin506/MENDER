@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: mender
+          POSTGRES_PASSWORD: mender
+          POSTGRES_DB: mender_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U mender" --health-interval 2s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - name: Lint
+        run: ruff check .
+      - name: Tests (Postgres)
+        env:
+          MENDER_TEST_POSTGRES_URL: postgresql+psycopg://mender:mender@localhost:5432/mender_test
+        run: pytest -q
+      - name: Eval gate (extraction + classification, no API calls)
+        run: |
+          python eval/run_eval.py --set tune --min-accuracy 0.9
+          python eval/run_eval.py --set holdout --out eval/results/holdout.json
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t mender:ci .

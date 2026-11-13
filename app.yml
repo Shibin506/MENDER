@@ -1,0 +1,14 @@
+# GitHub App manifest: https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest
+name: Mender
+url: https://github.com/
+hook_attributes:
+  url: https://YOUR-HOST/webhooks/github
+default_events:
+  - workflow_run
+default_permissions:
+  actions: write        # read job logs; write only to re-run flaky jobs when enabled
+  contents: read        # read files at the PR head commit
+  pull_requests: read
+  issues: write         # PR conversation comments are issue comments
+  metadata: read
+public: false

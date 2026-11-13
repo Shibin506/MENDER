@@ -1,0 +1,42 @@
+# Local stack: Postgres, the webhook API, and two workers sharing the queue.
+# Expose the API to GitHub with a tunnel, e.g. `smee` or `cloudflared tunnel --url http://localhost:8000`.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mender
+      POSTGRES_PASSWORD: mender
+      POSTGRES_DB: mender
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mender"]
+      interval: 2s
+      retries: 20
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      MENDER_DATABASE_URL: postgresql+psycopg://mender:mender@db:5432/mender
+    ports: ["8000:8000"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  worker:
+    build: .
+    command: ["mender", "worker"]
+    env_file: .env
+    environment:
+      MENDER_DATABASE_URL: postgresql+psycopg://mender:mender@db:5432/mender
+      MENDER_GITHUB_PRIVATE_KEY_PATH: /run/secrets/github_app_key
+    secrets: [github_app_key]
+    deploy: { replicas: 2 }
+    depends_on:
+      db: { condition: service_healthy }
+
+secrets:
+  github_app_key:
+    file: ./mender.private-key.pem
+
+volumes:
+  pgdata:

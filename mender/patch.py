@@ -53,7 +53,23 @@ def _strip_prefix(path: str) -> str | None:
     return path[2:] if path[:2] in ("a/", "b/") else path
 
 
-def parse(diff: str) -> list[FilePatch]:
+def _is_boundary(lines: list[str], i: int) -> bool:
+    """Start of the next hunk or file section."""
+    line = lines[i]
+    return bool(
+        _HUNK.match(line)
+        or line.startswith("diff --git ")
+        or (line.startswith("--- ") and i + 1 < len(lines) and lines[i + 1].startswith("+++ "))
+    )
+
+
+def parse(diff: str, recount: bool = False) -> list[FilePatch]:
+    """Parse a unified diff.
+
+    With ``recount`` the hunk-header line counts are ignored and recomputed from the
+    body, like ``git apply --recount``: models often get those numbers off by one
+    while the lines themselves are right. Content is still matched exactly.
+    """
     patches: list[FilePatch] = []
     lines = diff.replace("\r\n", "\n").split("\n")
     i = 0
@@ -72,7 +88,11 @@ def parse(diff: str) -> list[FilePatch]:
             hunk = Hunk(int(m.group(1)))
             i += 1
             seen_old = seen_new = 0
-            while i < len(lines) and (seen_old < old_len or seen_new < new_len):
+            while i < len(lines) and (
+                (seen_old < old_len or seen_new < new_len)
+                if not recount
+                else not _is_boundary(lines, i)
+            ):
                 body = lines[i]
                 if body.startswith("\\"):  # "\ No newline at end of file"
                     i += 1
@@ -86,7 +106,13 @@ def parse(diff: str) -> list[FilePatch]:
                 seen_old += tag in " -"
                 seen_new += tag in " +"
                 i += 1
-            if seen_old != old_len or seen_new != new_len:
+            if recount:
+                # Trailing blank lines are the end of the patch text, not context.
+                while hunk.lines and hunk.lines[-1] == " " and i >= len(lines) - 1:
+                    hunk.lines.pop()
+                    seen_old -= 1
+                    seen_new -= 1
+            elif seen_old != old_len or seen_new != new_len:
                 raise PatchError(
                     f"hunk @@ -{m.group(1)} in {patches[-1].path} has wrong line counts "
                     f"(header says -{old_len}/+{new_len}, body has -{seen_old}/+{seen_new})"
@@ -146,10 +172,10 @@ class ApplyResult:
     error: str | None = None
 
 
-def dry_run(diff: str, read_file) -> ApplyResult:
+def dry_run(diff: str, read_file, recount: bool = True) -> ApplyResult:
     """Apply `diff` in memory. `read_file(path)` returns contents or None."""
     try:
-        patches = parse(diff)
+        patches = parse(diff, recount=recount)
         files = {fp.path: apply_file(read_file(fp.old_path) if fp.old_path else None, fp)
                  for fp in patches}
     except PatchError as e:

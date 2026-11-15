@@ -5,7 +5,13 @@ from sqlalchemy import select
 
 from mender.db import DiagnosisRecord, Job, enqueue
 from mender.diagnose import DiagnosisRefused
-from mender.pipeline import Pipeline, RetryableError, RunEvent, truncate_diff
+from mender.pipeline import (
+    Pipeline,
+    RetryableError,
+    RunEvent,
+    context_file_order,
+    truncate_diff,
+)
 from mender.worker import Worker
 
 from .conftest import FLAKY_LOG, FakeDiagnoser, FakeRepo, run_payload
@@ -121,3 +127,26 @@ def test_worker_marks_github_404_as_dead(settings, session):
     worker.run_once()
     session.expire_all()
     assert session.scalars(select(Job)).one().status == "dead"
+
+
+def test_context_files_include_code_the_pr_changed_even_if_the_log_never_names_it():
+    # A failing test names only the test file; the bug is in the code the PR edited.
+    order = context_file_order(
+        log_refs=["tests/test_pricing.py", "src/shop/pricing.py", "lib/other.py"],
+        pr_files=["src/shop/cart.py", "src/shop/pricing.py"],
+    )
+    assert order == [
+        "src/shop/pricing.py",
+        "src/shop/cart.py",
+        "tests/test_pricing.py",
+        "lib/other.py",
+    ]
+    assert context_file_order(["tests/test_x.py"], ["src/x.py"]) == ["src/x.py", "tests/test_x.py"]
+
+
+def test_pipeline_sends_pr_changed_files_not_named_in_the_log(settings):
+    repo, diag = FakeRepo(), FakeDiagnoser()
+    repo.log = "\n".join(ln for ln in repo.log.splitlines() if "src/shop/pricing.py" not in ln)
+    assert "pricing.py:7" not in repo.log
+    run(settings, repo, diag)
+    assert "src/shop/pricing.py" in diag.calls[0].files

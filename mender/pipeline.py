@@ -87,6 +87,19 @@ def changed_files(diff: str) -> list[str]:
     return re.findall(r"^\+\+\+ b/(.+)$", diff, flags=re.MULTILINE)
 
 
+def context_file_order(log_refs: list[str], pr_files: list[str]) -> list[str]:
+    """Which source files to show the model, best first.
+
+    Files the log names *and* the PR changed are the strongest lead. Next come the
+    other files the PR changed: a test failure often names only the test file,
+    while the bug is in the code the PR edited. Last, other files the log names.
+    """
+    in_both = [p for p in log_refs if p in pr_files]
+    pr_only = [p for p in pr_files if p not in in_both]
+    log_only = [p for p in log_refs if p not in pr_files]
+    return list(dict.fromkeys(in_both + pr_only + log_only))
+
+
 def heuristic_diagnosis(extraction: Extraction, c: Classification) -> Diagnosis:
     """A diagnosis built only from the extractor, used for flakes and as a fallback."""
     # Show the sharpest excerpt verbatim (indentation matters for compiler carets).
@@ -128,12 +141,10 @@ class Pipeline:
         self, gh: RepoAPI, extraction: Extraction, pr_files: list[str], sha: str
     ) -> dict[str, str]:
         s = self.settings
-        refs = [r.path for r in extraction.file_refs]
-        # Files that both appear in the log and were changed by the PR come first.
-        ordered = [p for p in refs if p in pr_files] + [p for p in refs if p not in pr_files]
+        ordered = context_file_order([r.path for r in extraction.file_refs], pr_files)
         files: dict[str, str] = {}
         used = 0
-        for path in dict.fromkeys(ordered):
+        for path in ordered:
             if len(files) >= s.max_context_files:
                 break
             content = gh.file_at(path, sha)

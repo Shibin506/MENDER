@@ -110,11 +110,13 @@ def render_comment(
     if skipped_jobs:
         sections.append("Also failed (not analysed): " + ", ".join(
             f"`{_neutralise(j)}`" for j in skipped_jobs))
-    cost = sum(r.usage.cost_usd or 0 for r in results if r.usage)
+    costs = [r.usage.cost_usd for r in results if r.usage and r.usage.cost_usd is not None]
     models = sorted({r.usage.model for r in results if r.usage and r.usage.model})
     footer = f"<sub>Mender · {_link('workflow run', run_url)} · commit `{head_sha[:7]}`"
     if models:
-        footer += f" · {', '.join(models)} · ${cost:.3f}"
+        footer += f" · {', '.join(models)}"
+        if costs:  # unknown for models without a price table entry
+            footer += f" · ${sum(costs):.3f}"
     footer += " · react 👍 / 👎 to rate this diagnosis</sub>"
     body = "## 🩺 Mender CI diagnosis\n\n" + "\n\n---\n\n".join(sections) + "\n\n" + footer
     if len(body) > MAX_COMMENT_CHARS:

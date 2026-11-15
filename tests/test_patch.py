@@ -55,3 +55,31 @@ def test_multiple_hunks_apply_in_order():
 
 def test_garbage_is_rejected():
     assert not dry_run("I would change the discount logic.", lambda p: "x").ok
+
+
+def test_recount_accepts_wrong_header_counts_when_the_lines_match():
+    bad = GOOD_PATCH.replace("@@ -5,4 +5,4 @@", "@@ -5,9 +5,8 @@")
+    res = dry_run(bad, {"src/shop/pricing.py": PRICING_PY}.get)  # recount is the default
+    assert res.ok, res.error
+    assert "1 - (1 - discount) * (1 - cart.coupon)" in res.files["src/shop/pricing.py"]
+    assert not dry_run(bad, {"src/shop/pricing.py": PRICING_PY}.get, recount=False).ok
+
+
+def test_recount_still_requires_the_content_to_match():
+    bad = GOOD_PATCH.replace("@@ -5,4 +5,4 @@", "@@ -5,9 +5,8 @@").replace(
+        "     if cart.coupon:", "     if cart.coupon is not None:"
+    )
+    res = dry_run(bad, {"src/shop/pricing.py": PRICING_PY}.get)
+    assert not res.ok and "does not match" in res.error
+
+
+def test_recount_handles_several_hunks_and_trailing_blank_lines():
+    src = "\n".join(f"line {i}" for i in range(1, 21))
+    diff = (
+        "--- a/f.txt\n+++ b/f.txt\n"
+        "@@ -2,3 +2,3 @@\n-line 2\n+LINE 2\n"
+        "@@ -15,7 +15,1 @@\n-line 15\n+LINE 15\n+inserted\n\n\n"
+    )
+    out = dry_run(diff, {"f.txt": src}.get).files["f.txt"].split("\n")
+    assert out[1] == "LINE 2" and out[14] == "LINE 15" and out[15] == "inserted"
+    assert len(out) == 21

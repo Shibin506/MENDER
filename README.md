@@ -13,8 +13,8 @@
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-16a34a"></a>
 </p>
 
-<p align="center"><img src="docs/images/demo.gif" alt="A terminal: a 2,783-line failed GitHub Actions log is cut down to the one failing pytest assertion and rendered as a PR comment; then the held-out eval prints its table, keeping the error line in all 10 cases; then the Postgres concurrency test passes" width="900"></p>
-<p align="center"><sub>Real terminal output, sped up (<a href="docs/demo.mp4">MP4</a>). The Claude step is switched off here (<code>--no-llm</code>) because it needs an API key.</sub></p>
+<p align="center"><img src="docs/images/demo.gif" alt="A terminal: a commit that adds coupon codes breaks one pricing test; mender diagnose sends the failure to Gemini, which finds that the coupon overwrites the member discount and writes a patch; Mender runs pytest on a patched scratch copy and it passes; git apply then makes all four tests pass" width="900"></p>
+<p align="center"><sub>Real terminal output with Gemini 3.5 Flash, sped up (<a href="docs/demo.mp4">MP4</a>): a failing test, the diagnosis, a patch Mender verified by running the tests on a scratch copy, then <code>git apply</code> and green tests.</sub></p>
 
 When a workflow fails on a PR, Mender reads the failed job logs, cuts them down to the few lines that matter, and works out the root cause with Claude, using the PR diff and the files the log points at. It posts one comment on the PR and keeps it updated. Any patch it suggests is first applied, in memory, to the PR's head commit. A patch that doesn't apply cleanly is never shown.
 
@@ -161,7 +161,7 @@ mender diagnose --log ci.log --base main --verify-cmd "pytest -q" --patch-out fi
 
 ## Development
 ```bash
-make install && make test                     # 64 tests on SQLite
+make install && make test                     # 70 tests on SQLite
 MENDER_TEST_POSTGRES_URL=postgresql+psycopg://… pytest   # full suite + concurrency test on Postgres
 make eval
 ```

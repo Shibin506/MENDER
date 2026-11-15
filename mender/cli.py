@@ -19,7 +19,7 @@ from .config import get_settings
 from .diagnose import DiagnosisInput
 from .logparse import extract
 from .patch import dry_run
-from .pipeline import changed_files, heuristic_diagnosis, truncate_diff
+from .pipeline import changed_files, context_file_order, heuristic_diagnosis, truncate_diff
 from .render import JobResult, render_comment
 
 
@@ -53,11 +53,9 @@ def cmd_diagnose(args: argparse.Namespace) -> int:
     else:
         from .diagnose import build_diagnoser
 
-        pr_files = changed_files(diff)
-        refs = [r.path for r in extraction.file_refs]
-        ordered = [p for p in refs if p in pr_files] + [p for p in refs if p not in pr_files]
+        ordered = context_file_order([r.path for r in extraction.file_refs], changed_files(diff))
         files = {}
-        for path in dict.fromkeys(ordered):
+        for path in ordered:
             content = _local_file(root, path)
             if content is not None and len(files) < settings.max_context_files:
                 files[path] = content
@@ -102,7 +100,7 @@ def cmd_diagnose(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    log_format = "%(asctime)s %(levelname)s %(name)s %(message)s"
     parser = argparse.ArgumentParser(prog="mender")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
@@ -122,10 +120,14 @@ def main(argv: list[str] | None = None) -> int:
     diag.add_argument("--no-llm", action="store_true", help="heuristics only, no API call")
     diag.add_argument("--provider", choices=["claude", "gemini"], help="override MENDER_PROVIDER")
     diag.add_argument("--json", action="store_true", help="print the diagnosis as JSON")
+    diag.add_argument("-v", "--verbose", action="store_true", help="show request logs")
     diag.add_argument("--patch-out", help="write the patch here if it applies (and passes)")
     diag.add_argument("--verify-cmd", help="run this in a patched scratch copy, e.g. 'pytest -q'")
 
     args = parser.parse_args(argv)
+    # Services log at INFO; the one-shot diagnose command stays quiet unless asked.
+    quiet = args.cmd == "diagnose" and not args.verbose
+    logging.basicConfig(level=logging.WARNING if quiet else logging.INFO, format=log_format)
     if args.cmd == "serve":
         import uvicorn
 

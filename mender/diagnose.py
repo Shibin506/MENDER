@@ -202,3 +202,100 @@ class ClaudeDiagnoser:
             usage.cost_usd, response._request_id,
         )
         return response.parsed_output, usage
+
+
+class TransientLLMError(RuntimeError):
+    """Rate limit, overload or network failure: the job should be retried later."""
+
+
+def _inline_refs(schema: dict) -> dict:
+    """Resolve local $refs; some structured-output backends reject $defs."""
+    defs = schema.get("$defs", {})
+
+    def walk(node):
+        if isinstance(node, dict):
+            if "$ref" in node:
+                return walk(defs[node["$ref"].split("/")[-1]])
+            return {k: walk(v) for k, v in node.items() if k not in ("$defs", "title")}
+        if isinstance(node, list):
+            return [walk(v) for v in node]
+        return node
+
+    return walk(schema)
+
+
+class GeminiDiagnoser:
+    """Gemini through its OpenAI-compatible endpoint, with a strict JSON schema.
+
+    The API key is sent as a bearer token. In the hosted dev environment a
+    proxy injects it, so `api_key` may be a placeholder there.
+    """
+
+    def __init__(
+        self,
+        model: str = "gemini-3.5-flash",
+        api_key: str = "",
+        base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai",
+        timeout: float = 120.0,
+        http=None,
+    ):
+        import httpx
+
+        self.model = model
+        self.api_key = api_key
+        self.base_url = base_url.rstrip("/")
+        self.http = http or httpx.Client(timeout=timeout)
+        self.schema = _inline_refs(Diagnosis.model_json_schema())
+
+    def diagnose(self, inp: DiagnosisInput) -> tuple[Diagnosis, Usage]:
+        import httpx
+
+        started = time.monotonic()
+        try:
+            r = self.http.post(
+                f"{self.base_url}/chat/completions",
+                headers={"Authorization": f"Bearer {self.api_key or 'unset'}"},
+                json={
+                    "model": self.model,
+                    "messages": [
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": build_user_message(inp)},
+                    ],
+                    "response_format": {
+                        "type": "json_schema",
+                        "json_schema": {"name": "diagnosis", "strict": True,
+                                        "schema": self.schema},
+                    },
+                },
+            )
+        except httpx.TransportError as e:
+            raise TransientLLMError(f"Gemini connection error: {e}") from e
+        if r.status_code == 429 or r.status_code >= 500:
+            raise TransientLLMError(f"Gemini HTTP {r.status_code}: {r.text[:300]}")
+        if r.status_code >= 400:
+            raise RuntimeError(f"Gemini HTTP {r.status_code}: {r.text[:300]}")
+        data = r.json()
+        choice = data["choices"][0]
+        if choice.get("finish_reason") not in ("stop", None):
+            raise RuntimeError(f"no parsed diagnosis (finish_reason={choice.get('finish_reason')})")
+        diagnosis = Diagnosis.model_validate_json(choice["message"]["content"])
+        u = data.get("usage", {})
+        usage = Usage(
+            input_tokens=u.get("prompt_tokens", 0),
+            output_tokens=u.get("completion_tokens", 0),
+            latency_ms=int((time.monotonic() - started) * 1000),
+            model=data.get("model", self.model),
+        )
+        usage.cost_usd = estimate_cost(usage.model, usage)
+        log.info("diagnosis done model=%s in=%d out=%d", usage.model, usage.input_tokens,
+                 usage.output_tokens)
+        return diagnosis, usage
+
+
+def build_diagnoser(settings, enabled: bool = True) -> Diagnoser | None:
+    """The configured model backend, or None for heuristics only."""
+    if not enabled:
+        return None
+    if settings.provider == "gemini":
+        return GeminiDiagnoser(settings.gemini_model, settings.gemini_api_key)
+    return ClaudeDiagnoser(settings.model, settings.effort, settings.max_output_tokens)

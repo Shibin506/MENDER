@@ -149,35 +149,54 @@ def run_heuristics(cases: list[dict], seed: int, verbose: bool) -> dict:
 def run_llm(cases: list[dict], seed: int) -> dict:
     from mender.classify import classify as _classify
     from mender.config import get_settings
-    from mender.diagnose import ClaudeDiagnoser, DiagnosisInput
+    from mender.diagnose import DiagnosisInput, TransientLLMError, build_diagnoser
     from mender.patch import dry_run
 
     settings = get_settings()
-    diagnoser = ClaudeDiagnoser(settings.model, settings.effort)
-    rows = []
+    diagnoser = build_diagnoser(settings)
+    rows, errors = [], []
     for case in cases:
         ex = extract(build_log(case, seed))
         inp = DiagnosisInput(repo="acme/app", pr_number=1, pr_title="eval", job_name="ci",
                              failed_step=None, classification=_classify(ex),
                              log_excerpt=ex.text, files=case["files"])
-        d, usage = diagnoser.diagnose(inp)
+        for attempt in range(5):
+            try:
+                d, usage = diagnoser.diagnose(inp)
+                break
+            except TransientLLMError as e:  # free tiers rate-limit hard; back off and retry
+                print(f"  {case['id']}: {str(e)[:80]} - retry in {20 * (attempt + 1)}s")
+                time.sleep(20 * (attempt + 1))
+            except Exception as e:  # noqa: BLE001 - record and carry on with the next case
+                d = None
+                errors.append({"id": case["id"], "error": f"{type(e).__name__}: {e}"[:300]})
+                break
+        else:
+            d = None
+            errors.append({"id": case["id"], "error": "rate limited after 5 attempts"})
+        if d is None:
+            print(f"{case['id']:28} ERROR {errors[-1]['error'][:90]}")
+            continue
         culprits = [f.path for f in d.culprit_files]
         patch = None
         if d.patch.strip():
             patch = dry_run(d.patch, lambda p, files=case["files"]: files.get(p)).ok
         rows.append({
             "id": case["id"], "category_ok": d.category == case["category"],
+            "predicted": d.category,
             "culprit_ok": case["culprit"] in culprits if case["culprit"] else None,
             "patch_applies": patch, "cost_usd": usage.cost_usd, "latency_ms": usage.latency_ms,
-            "summary": d.summary,
+            "model": usage.model, "summary": d.summary,
         })
-        print(f"{case['id']:28} cat={'ok' if rows[-1]['category_ok'] else 'X'} "
-              f"culprit={rows[-1]['culprit_ok']} patch={patch} ${usage.cost_usd} "
-              f"{usage.latency_ms}ms  {d.summary[:70]}")
+        print(f"{case['id']:28} cat={'ok' if rows[-1]['category_ok'] else 'X ' + d.category} "
+              f"culprit={rows[-1]['culprit_ok']} patch={patch} {usage.latency_ms}ms  "
+              f"{d.summary[:70]}")
     patched = [r for r in rows if r["patch_applies"] is not None]
     culprit_rows = [r for r in rows if r["culprit_ok"] is not None]
     summary = {
         "category_accuracy": sum(r["category_ok"] for r in rows) / len(rows),
+        "answered": len(rows),
+        "errors": len(errors),
         "culprit_accuracy": sum(r["culprit_ok"] for r in culprit_rows) / len(culprit_rows),
         "patch_apply_rate": (sum(r["patch_applies"] for r in patched) / len(patched)
                              if patched else None),
@@ -186,7 +205,7 @@ def run_llm(cases: list[dict], seed: int) -> dict:
         "p50_latency_ms": statistics.median(r["latency_ms"] for r in rows),
     }
     print(json.dumps(summary, indent=2))
-    return {"summary": summary, "rows": rows}
+    return {"summary": summary, "rows": rows, "errors": errors}
 
 
 def main() -> int:

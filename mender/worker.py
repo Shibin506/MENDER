@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from . import metrics
 from .config import Settings
 from .db import DiagnosisRecord, Job, claim, complete, fail, get_sessionmaker
-from .diagnose import ClaudeDiagnoser, Diagnoser
+from .diagnose import Diagnoser, build_diagnoser  # noqa: F401 - re-exported for the CLI
 from .github import GitHubAppAuth, GitHubClient
 from .pipeline import Pipeline, RetryableError, RunEvent
 
@@ -100,8 +100,3 @@ class Worker:
             if not self.run_once():
                 time.sleep(self.settings.worker_poll_seconds)
 
-
-def build_diagnoser(settings: Settings, enabled: bool = True) -> Diagnoser | None:
-    if not enabled:
-        return None
-    return ClaudeDiagnoser(settings.model, settings.effort, settings.max_output_tokens)

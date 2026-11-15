@@ -32,6 +32,8 @@ def _local_file(root: Path, path: str) -> str | None:
 
 def cmd_diagnose(args: argparse.Namespace) -> int:
     settings = get_settings()
+    if args.provider:
+        settings = settings.model_copy(update={"provider": args.provider})
     raw = Path(args.log).read_text(errors="replace") if args.log != "-" else sys.stdin.read()
     root = Path(args.repo_root)
     diff = Path(args.diff).read_text() if args.diff else ""
@@ -49,7 +51,7 @@ def cmd_diagnose(args: argparse.Namespace) -> int:
     if args.no_llm or (c.likely_flaky and c.confidence >= 0.8):
         result = JobResult("local", "", None, heuristic_diagnosis(extraction, c), used_llm=False)
     else:
-        from .diagnose import ClaudeDiagnoser
+        from .diagnose import build_diagnoser
 
         pr_files = changed_files(diff)
         refs = [r.path for r in extraction.file_refs]
@@ -64,12 +66,20 @@ def cmd_diagnose(args: argparse.Namespace) -> int:
             failed_step=None, classification=c, log_excerpt=extraction.text, diff=diff,
             diff_truncated=truncated, files=files,
         )
-        diagnosis, usage = ClaudeDiagnoser(settings.model, settings.effort).diagnose(inp)
+        diagnosis, usage = build_diagnoser(settings).diagnose(inp)
         result = JobResult("local", "", None, diagnosis, used_llm=True, usage=usage)
         if diagnosis.patch.strip():
             applied = dry_run(diagnosis.patch, lambda p: _local_file(root, p))
             result.patch_status = "valid" if applied.ok else "invalid"
             result.patch_error = applied.error
+
+    if args.patch_out:
+        if result.patch_status == "valid":
+            Path(args.patch_out).write_text(result.diagnosis.patch.rstrip("\n") + "\n")
+            print(f"[mender] verified patch written to {args.patch_out}", file=sys.stderr)
+        else:
+            print(f"[mender] no verified patch ({result.patch_status}: {result.patch_error})",
+                  file=sys.stderr)
 
     if args.json:
         out = result.diagnosis.model_dump()
@@ -100,7 +110,9 @@ def main(argv: list[str] | None = None) -> int:
     diag.add_argument("--base", help="compute the diff with `git diff BASE` in --repo-root")
     diag.add_argument("--title", default="Local change", help="PR title to give the model")
     diag.add_argument("--no-llm", action="store_true", help="heuristics only, no API call")
+    diag.add_argument("--provider", choices=["claude", "gemini"], help="override MENDER_PROVIDER")
     diag.add_argument("--json", action="store_true", help="print the diagnosis as JSON")
+    diag.add_argument("--patch-out", help="write the patch here if it applies cleanly")
 
     args = parser.parse_args(argv)
     if args.cmd == "serve":

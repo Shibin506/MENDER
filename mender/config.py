@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     github_webhook_secret: str = ""
     github_api_url: str = "https://api.github.com"
 
+    # Model backend: "claude" or "gemini"
+    provider: str = "claude"
+    gemini_model: str = "gemini-3.5-flash"
+    gemini_api_key: str = ""
+
     # Claude
     model: str = "claude-opus-5-5"
     effort: str = "medium"

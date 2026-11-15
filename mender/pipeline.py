@@ -12,7 +12,14 @@ import anthropic
 from . import metrics
 from .classify import Category, Classification, classify
 from .config import Settings
-from .diagnose import Diagnoser, Diagnosis, DiagnosisInput, DiagnosisRefused, FileLocation
+from .diagnose import (
+    Diagnoser,
+    Diagnosis,
+    DiagnosisInput,
+    DiagnosisRefused,
+    FileLocation,
+    TransientLLMError,
+)
 from .github import FailedJob
 from .logparse import Extraction, extract
 from .patch import dry_run
@@ -157,8 +164,8 @@ class Pipeline:
         try:
             diagnosis, usage = self.diagnoser.diagnose(inp)
         except (anthropic.RateLimitError, anthropic.InternalServerError,
-                anthropic.APIConnectionError) as e:
-            raise RetryableError(f"Claude API transient error: {e}") from e
+                anthropic.APIConnectionError, TransientLLMError) as e:
+            raise RetryableError(f"model API transient error: {e}") from e
         except (DiagnosisRefused, anthropic.APIStatusError, RuntimeError) as e:
             log.warning("LLM diagnosis failed for job %s, using heuristic: %s", job.id, e)
             metrics.LLM_FAILURES.labels(type(e).__name__).inc()

@@ -72,3 +72,12 @@ def test_build_diagnoser_picks_provider():
     s = Settings(_env_file=None, provider="claude")
     assert build_diagnoser(s, enabled=False) is None
     assert isinstance(build_diagnoser(s), ClaudeDiagnoser)  # constructing it makes no request
+
+
+@respx.mock
+def test_reasoning_effort_is_sent_only_when_set():
+    route = respx.post(URL).mock(return_value=ok_response())
+    GeminiDiagnoser().diagnose(inp())
+    GeminiDiagnoser(reasoning_effort="low").diagnose(inp())
+    bodies = [json.loads(c.request.content) for c in route.calls]
+    assert "reasoning_effort" not in bodies[0] and bodies[1]["reasoning_effort"] == "low"

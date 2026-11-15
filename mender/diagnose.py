@@ -238,12 +238,14 @@ class GeminiDiagnoser:
         base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai",
         timeout: float = 120.0,
         http=None,
+        reasoning_effort: str = "",
     ):
         import httpx
 
         self.model = model
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
+        self.reasoning_effort = reasoning_effort
         self.http = http or httpx.Client(timeout=timeout)
         self.schema = _inline_refs(Diagnosis.model_json_schema())
 
@@ -251,22 +253,24 @@ class GeminiDiagnoser:
         import httpx
 
         started = time.monotonic()
+        body = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": build_user_message(inp)},
+            ],
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {"name": "diagnosis", "strict": True, "schema": self.schema},
+            },
+        }
+        if self.reasoning_effort:
+            body["reasoning_effort"] = self.reasoning_effort
         try:
             r = self.http.post(
                 f"{self.base_url}/chat/completions",
                 headers={"Authorization": f"Bearer {self.api_key or 'unset'}"},
-                json={
-                    "model": self.model,
-                    "messages": [
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": build_user_message(inp)},
-                    ],
-                    "response_format": {
-                        "type": "json_schema",
-                        "json_schema": {"name": "diagnosis", "strict": True,
-                                        "schema": self.schema},
-                    },
-                },
+                json=body,
             )
         except httpx.TransportError as e:
             raise TransientLLMError(f"Gemini connection error: {e}") from e
@@ -297,5 +301,6 @@ def build_diagnoser(settings, enabled: bool = True) -> Diagnoser | None:
     if not enabled:
         return None
     if settings.provider == "gemini":
-        return GeminiDiagnoser(settings.gemini_model, settings.gemini_api_key)
+        return GeminiDiagnoser(settings.gemini_model, settings.gemini_api_key,
+                               reasoning_effort=settings.gemini_reasoning_effort)
     return ClaudeDiagnoser(settings.model, settings.effort, settings.max_output_tokens)

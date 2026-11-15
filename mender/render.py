@@ -28,7 +28,8 @@ class JobResult:
     failed_step: str | None
     diagnosis: Diagnosis
     used_llm: bool
-    patch_status: str = "none"  # none | valid | invalid
+    patch_status: str = "none"  # none | valid | invalid | verified | tests_fail
+    verify_cmd: str | None = None
     patch_error: str | None = None
     usage: Usage | None = None
     rerun_requested: bool = False
@@ -80,16 +81,22 @@ def render_job(r: JobResult, head_sha: str) -> str:
             "",
             "</details>",
         ]
-    if r.patch_status == "valid" and d.patch:
+    if r.patch_status in ("valid", "verified") and d.patch:
+        check = (f" and <code>{_neutralise(r.verify_cmd)}</code> passes"
+                 if r.patch_status == "verified" and r.verify_cmd else "")
         out += [
             "",
-            f"<details><summary>Suggested patch (applies cleanly to <code>{head_sha[:7]}</code>)"
-            "</summary>",
+            f"<details><summary>Suggested patch (applies cleanly to <code>{head_sha[:7]}</code>"
+            f"{check})</summary>",
             "",
             _fence(_neutralise(d.patch.rstrip("\n")), "diff"),
             "",
             "</details>",
         ]
+    elif r.patch_status == "tests_fail":
+        out += ["", "<sub>A patch was drafted and applied, but "
+                f"<code>{_neutralise(r.verify_cmd or 'the tests')}</code> still failed with it, "
+                "so it is not shown.</sub>"]
     elif r.patch_status == "invalid":
         out += ["", "<sub>A patch was drafted but did not apply to the head commit, "
                 "so it is not shown.</sub>"]

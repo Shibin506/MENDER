@@ -1,0 +1,825 @@
+{
+  "set": "all",
+  "heuristics": {
+    "summary": {
+      "cases": 30,
+      "category_accuracy": 0.8333333333333334,
+      "evidence_kept": 1.0,
+      "culprit_recall_at_3": 0.8125,
+      "culprit_cases": 16,
+      "llm_skips": 5,
+      "wrong_llm_skips": 0,
+      "median_raw_lines": 2842.5,
+      "median_kept_ratio": 0.0024958431883034446,
+      "token_reduction": 0.9977624154862947
+    },
+    "rows": [
+      {
+        "id": "pytest-assert",
+        "expected": "test_failure",
+        "predicted": "test_failure",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 216368,
+        "kept_chars": 847,
+        "raw_lines": 2784,
+        "refs": [
+          "tests/test_pricing.py"
+        ]
+      },
+      {
+        "id": "jest-expect",
+        "expected": "test_failure",
+        "predicted": "test_failure",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 312727,
+        "kept_chars": 600,
+        "raw_lines": 4018,
+        "refs": [
+          "src/utils/formatDate.test.ts"
+        ]
+      },
+      {
+        "id": "go-test",
+        "expected": "test_failure",
+        "predicted": "test_failure",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 242360,
+        "kept_chars": 286,
+        "raw_lines": 3133,
+        "refs": [
+          "lru_test.go"
+        ]
+      },
+      {
+        "id": "rust-e0308",
+        "expected": "build_error",
+        "predicted": "build_error",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": true,
+        "raw_chars": 221251,
+        "kept_chars": 792,
+        "raw_lines": 2849,
+        "refs": [
+          "src/parser.rs"
+        ]
+      },
+      {
+        "id": "tsc-ts2339",
+        "expected": "build_error",
+        "predicted": "build_error",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": true,
+        "raw_chars": 225086,
+        "kept_chars": 431,
+        "raw_lines": 2918,
+        "refs": [
+          "src/api/client.ts"
+        ]
+      },
+      {
+        "id": "eslint",
+        "expected": "lint",
+        "predicted": "lint",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": true,
+        "raw_chars": 156705,
+        "kept_chars": 382,
+        "raw_lines": 2040,
+        "refs": [
+          "src/components/Button.tsx"
+        ]
+      },
+      {
+        "id": "ruff",
+        "expected": "lint",
+        "predicted": "lint",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": true,
+        "raw_chars": 177274,
+        "kept_chars": 284,
+        "raw_lines": 2301,
+        "refs": [
+          "app/main.py"
+        ]
+      },
+      {
+        "id": "mypy",
+        "expected": "build_error",
+        "predicted": "build_error",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": true,
+        "raw_chars": 164926,
+        "kept_chars": 474,
+        "raw_lines": 2131,
+        "refs": [
+          "app/models.py"
+        ]
+      },
+      {
+        "id": "npm-eresolve",
+        "expected": "dependency",
+        "predicted": "dependency",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 226425,
+        "kept_chars": 585,
+        "raw_lines": 2921,
+        "refs": []
+      },
+      {
+        "id": "pip-resolution",
+        "expected": "dependency",
+        "predicted": "dependency",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 218442,
+        "kept_chars": 636,
+        "raw_lines": 2836,
+        "refs": []
+      },
+      {
+        "id": "npm-econnreset",
+        "expected": "infra_flake",
+        "predicted": "infra_flake",
+        "category_ok": true,
+        "skipped_llm": true,
+        "truly_flaky": true,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 149013,
+        "kept_chars": 446,
+        "raw_lines": 1941,
+        "refs": []
+      },
+      {
+        "id": "docker-ratelimit",
+        "expected": "infra_flake",
+        "predicted": "infra_flake",
+        "category_ok": true,
+        "skipped_llm": true,
+        "truly_flaky": true,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 178042,
+        "kept_chars": 496,
+        "raw_lines": 2280,
+        "refs": []
+      },
+      {
+        "id": "oom-137",
+        "expected": "infra_flake",
+        "predicted": "infra_flake",
+        "category_ok": true,
+        "skipped_llm": true,
+        "truly_flaky": true,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 284488,
+        "kept_chars": 336,
+        "raw_lines": 3691,
+        "refs": []
+      },
+      {
+        "id": "job-timeout",
+        "expected": "timeout",
+        "predicted": "timeout",
+        "category_ok": true,
+        "skipped_llm": true,
+        "truly_flaky": true,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 235117,
+        "kept_chars": 420,
+        "raw_lines": 3041,
+        "refs": []
+      },
+      {
+        "id": "missing-secret",
+        "expected": "config",
+        "predicted": "config",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": true,
+        "raw_chars": 220901,
+        "kept_chars": 363,
+        "raw_lines": 2877,
+        "refs": [
+          ".github/workflows/release.yml"
+        ]
+      },
+      {
+        "id": "go-build-undefined",
+        "expected": "build_error",
+        "predicted": "build_error",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": true,
+        "raw_chars": 119201,
+        "kept_chars": 338,
+        "raw_lines": 1516,
+        "refs": [
+          "cmd/server/main.go"
+        ]
+      },
+      {
+        "id": "gradle-javac",
+        "expected": "build_error",
+        "predicted": "build_error",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": true,
+        "raw_chars": 179107,
+        "kept_chars": 450,
+        "raw_lines": 2313,
+        "refs": [
+          "src/main/java/com/acme/orders/OrderService.java"
+        ]
+      },
+      {
+        "id": "pytest-collection-import",
+        "expected": "dependency",
+        "predicted": "dependency",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 268617,
+        "kept_chars": 738,
+        "raw_lines": 3463,
+        "refs": [
+          "tests/test_api.py"
+        ]
+      },
+      {
+        "id": "rust-test-panic",
+        "expected": "test_failure",
+        "predicted": "test_failure",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": true,
+        "raw_chars": 278888,
+        "kept_chars": 337,
+        "raw_lines": 3600,
+        "refs": [
+          "src/ring.rs"
+        ]
+      },
+      {
+        "id": "python-runtime-exception",
+        "expected": "test_failure",
+        "predicted": "test_failure",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": true,
+        "raw_chars": 211338,
+        "kept_chars": 586,
+        "raw_lines": 2727,
+        "refs": [
+          "tests/test_invoice.py",
+          "app/billing/invoice.py"
+        ]
+      },
+      {
+        "id": "vitest-fail",
+        "expected": "test_failure",
+        "predicted": "test_failure",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": true,
+        "raw_chars": 188087,
+        "kept_chars": 519,
+        "raw_lines": 2437,
+        "refs": [
+          "src/lib/slugify.test.ts",
+          "src/lib/slugify.ts"
+        ]
+      },
+      {
+        "id": "clippy-deny",
+        "expected": "lint",
+        "predicted": "build_error",
+        "category_ok": false,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": true,
+        "raw_chars": 194222,
+        "kept_chars": 480,
+        "raw_lines": 2514,
+        "refs": [
+          "src/store.rs"
+        ]
+      },
+      {
+        "id": "black-check",
+        "expected": "lint",
+        "predicted": "unknown",
+        "category_ok": false,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": false,
+        "raw_chars": 116755,
+        "kept_chars": 303,
+        "raw_lines": 1509,
+        "refs": []
+      },
+      {
+        "id": "pnpm-lockfile",
+        "expected": "dependency",
+        "predicted": "unknown",
+        "category_ok": false,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": false,
+        "raw_chars": 211760,
+        "kept_chars": 525,
+        "raw_lines": 2733,
+        "refs": []
+      },
+      {
+        "id": "kotlin-unresolved",
+        "expected": "build_error",
+        "predicted": "build_error",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": false,
+        "raw_chars": 235961,
+        "kept_chars": 467,
+        "raw_lines": 3037,
+        "refs": []
+      },
+      {
+        "id": "apt-404",
+        "expected": "infra_flake",
+        "predicted": "unknown",
+        "category_ok": false,
+        "skipped_llm": false,
+        "truly_flaky": true,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 284621,
+        "kept_chars": 537,
+        "raw_lines": 3674,
+        "refs": []
+      },
+      {
+        "id": "git-dns",
+        "expected": "infra_flake",
+        "predicted": "infra_flake",
+        "category_ok": true,
+        "skipped_llm": true,
+        "truly_flaky": true,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 167740,
+        "kept_chars": 474,
+        "raw_lines": 2165,
+        "refs": []
+      },
+      {
+        "id": "jest-snapshot",
+        "expected": "test_failure",
+        "predicted": "test_failure",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 300068,
+        "kept_chars": 404,
+        "raw_lines": 3894,
+        "refs": [
+          "src/components/PriceTag.test.tsx"
+        ]
+      },
+      {
+        "id": "command-not-found",
+        "expected": "config",
+        "predicted": "unknown",
+        "category_ok": false,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": false,
+        "culprit_hit": false,
+        "raw_chars": 288951,
+        "kept_chars": 328,
+        "raw_lines": 3716,
+        "refs": []
+      },
+      {
+        "id": "playwright",
+        "expected": "test_failure",
+        "predicted": "test_failure",
+        "category_ok": true,
+        "skipped_llm": false,
+        "truly_flaky": false,
+        "evidence_kept": true,
+        "culprit_in_log": true,
+        "culprit_hit": true,
+        "raw_chars": 241514,
+        "kept_chars": 716,
+        "raw_lines": 3138,
+        "refs": [
+          "e2e/checkout.spec.ts"
+        ]
+      }
+    ]
+  },
+  "llm": {
+    "summary": {
+      "category_accuracy": 0.9615384615384616,
+      "answered": 26,
+      "errors": 4,
+      "culprit_accuracy": 0.8947368421052632,
+      "patch_apply_rate": 1.0,
+      "patches_drafted": 2,
+      "mean_cost_usd": 0,
+      "p50_latency_ms": 5752.5
+    },
+    "rows": [
+      {
+        "id": "pytest-assert",
+        "category_ok": true,
+        "predicted": "test_failure",
+        "culprit_ok": true,
+        "patch_applies": true,
+        "cost_usd": null,
+        "latency_ms": 14433,
+        "model": "gemini-3.5-flash",
+        "summary": "Member discount and coupon discount overwrite each other rather than stacking in total()."
+      },
+      {
+        "id": "jest-expect",
+        "category_ok": true,
+        "predicted": "test_failure",
+        "culprit_ok": true,
+        "patch_applies": true,
+        "cost_usd": null,
+        "latency_ms": 7583,
+        "model": "gemini-3.5-flash",
+        "summary": "formatDate does not pad single-digit day numbers with a leading zero."
+      },
+      {
+        "id": "go-test",
+        "category_ok": true,
+        "predicted": "test_failure",
+        "culprit_ok": false,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 3808,
+        "model": "gemini-3.5-flash",
+        "summary": "TestLRUEvictsOldest failed because key \"a\" was not evicted from the cache."
+      },
+      {
+        "id": "rust-e0308",
+        "category_ok": true,
+        "predicted": "build_error",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 4544,
+        "model": "gemini-3.5-flash",
+        "summary": "Type mismatch in `parse_number` returning `Result<_, ParseFloatError>` instead of `Result<f64, ParseError>`"
+      },
+      {
+        "id": "tsc-ts2339",
+        "category_ok": true,
+        "predicted": "build_error",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 5695,
+        "model": "gemini-3.5-flash",
+        "summary": "TypeScript check failed due to missing 'retries' property on 'ClientOptions'."
+      },
+      {
+        "id": "eslint",
+        "category_ok": true,
+        "predicted": "lint",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 5386,
+        "model": "gemini-3.5-flash",
+        "summary": "ESLint failed with errors for missing Hook dependency 'onPress' and unused variable 'unusedRef' in src/components/Button.tsx."
+      },
+      {
+        "id": "ruff",
+        "category_ok": true,
+        "predicted": "lint",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 4418,
+        "model": "gemini-3.5-flash",
+        "summary": "Ruff check failed due to an unused `os` import and a line exceeding length limits in `app/main.py`."
+      },
+      {
+        "id": "mypy",
+        "category_ok": false,
+        "predicted": "lint",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 5001,
+        "model": "gemini-3.5-flash",
+        "summary": "Mypy type check failed in app/models.py due to unhandled Optional[str] types."
+      },
+      {
+        "id": "npm-eresolve",
+        "category_ok": true,
+        "predicted": "dependency",
+        "culprit_ok": null,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 10321,
+        "model": "gemini-3.5-flash",
+        "summary": "npm ci failed due to a peer dependency conflict between react@19.0.0 and react-beautiful-dnd@13.1.1"
+      },
+      {
+        "id": "pip-resolution",
+        "category_ok": true,
+        "predicted": "dependency",
+        "culprit_ok": null,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 7073,
+        "model": "gemini-3.5-flash",
+        "summary": "Dependency conflict: requirements.txt pins pydantic==1.10.13 while sqlmodel 0.0.22 requires pydantic>=2.0."
+      },
+      {
+        "id": "npm-econnreset",
+        "category_ok": true,
+        "predicted": "infra_flake",
+        "culprit_ok": null,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 2848,
+        "model": "gemini-3.5-flash",
+        "summary": "npm ci failed due to a transient network connection reset (ECONNRESET)."
+      },
+      {
+        "id": "docker-ratelimit",
+        "category_ok": true,
+        "predicted": "infra_flake",
+        "culprit_ok": null,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 5152,
+        "model": "gemini-3.5-flash",
+        "summary": "Docker Hub rate limit exceeded when pulling python:3.12-slim base image."
+      },
+      {
+        "id": "oom-137",
+        "category_ok": true,
+        "predicted": "infra_flake",
+        "culprit_ok": null,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 7241,
+        "model": "gemini-3.5-flash",
+        "summary": "Next.js build failed due to Node.js JavaScript heap out of memory (exit code 137)."
+      },
+      {
+        "id": "job-timeout",
+        "category_ok": true,
+        "predicted": "timeout",
+        "culprit_ok": null,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 6588,
+        "model": "gemini-3.5-flash",
+        "summary": "The test `test_full_sync_large_account` hung, exceeding the 30-minute runner execution limit."
+      },
+      {
+        "id": "missing-secret",
+        "category_ok": true,
+        "predicted": "config",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 5054,
+        "model": "gemini-3.5-flash",
+        "summary": "The release workflow failed because the required `token` input was not supplied to `actions/create-release`."
+      },
+      {
+        "id": "go-build-undefined",
+        "category_ok": true,
+        "predicted": "build_error",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 3997,
+        "model": "gemini-3.5-flash",
+        "summary": "Build failed due to undefined config.LoadFromEnv reference in cmd/server/main.go"
+      },
+      {
+        "id": "gradle-javac",
+        "category_ok": true,
+        "predicted": "build_error",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 5810,
+        "model": "gemini-3.5-flash",
+        "summary": "Compilation error in OrderService.java due to missing method findByCustomer in OrderRepository."
+      },
+      {
+        "id": "pytest-collection-import",
+        "category_ok": true,
+        "predicted": "dependency",
+        "culprit_ok": null,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 6976,
+        "model": "gemini-3.5-flash",
+        "summary": "Test collection failed due to missing `httpx` dependency in `tests/test_api.py`."
+      },
+      {
+        "id": "rust-test-panic",
+        "category_ok": true,
+        "predicted": "test_failure",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 7310,
+        "model": "gemini-3.5-flash",
+        "summary": "`ring::tests::wraps_around` failed due to an assertion error at `src/ring.rs:88:9`."
+      },
+      {
+        "id": "python-runtime-exception",
+        "category_ok": true,
+        "predicted": "test_failure",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 7828,
+        "model": "gemini-3.5-flash",
+        "summary": "test_render_invoice failed with KeyError: 'currency' during currency symbol lookup in render()."
+      },
+      {
+        "id": "vitest-fail",
+        "category_ok": true,
+        "predicted": "test_failure",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 6708,
+        "model": "gemini-3.5-flash",
+        "summary": "The `slugify` function fails to collapse repeated separators into a single hyphen."
+      },
+      {
+        "id": "clippy-deny",
+        "category_ok": true,
+        "predicted": "lint",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 5256,
+        "model": "gemini-3.5-flash",
+        "summary": "Clippy lint failed due to a needless return statement in src/store.rs."
+      },
+      {
+        "id": "black-check",
+        "category_ok": true,
+        "predicted": "lint",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 4813,
+        "model": "gemini-3.5-flash",
+        "summary": "Black code formatting check failed on app/routes/orders.py."
+      },
+      {
+        "id": "pnpm-lockfile",
+        "category_ok": true,
+        "predicted": "dependency",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 8836,
+        "model": "gemini-3.5-flash",
+        "summary": "pnpm-lock.yaml is not up to date with packages/web/package.json"
+      },
+      {
+        "id": "kotlin-unresolved",
+        "category_ok": true,
+        "predicted": "build_error",
+        "culprit_ok": true,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 5433,
+        "model": "gemini-3.5-flash",
+        "summary": "Kotlin compilation failed due to an unresolved reference to 'avatarUrl' in ProfileScreen.kt."
+      },
+      {
+        "id": "jest-snapshot",
+        "category_ok": true,
+        "predicted": "test_failure",
+        "culprit_ok": false,
+        "patch_applies": null,
+        "cost_usd": null,
+        "latency_ms": 6262,
+        "model": "gemini-3.5-flash",
+        "summary": "PriceTag snapshot test failed due to price output formatting with three decimal places ($19.990 instead of $19.99)."
+      }
+    ],
+    "errors": [
+      {
+        "id": "apt-404",
+        "error": "rate limited after 5 attempts"
+      },
+      {
+        "id": "git-dns",
+        "error": "rate limited after 5 attempts"
+      },
+      {
+        "id": "command-not-found",
+        "error": "rate limited after 5 attempts"
+      },
+      {
+        "id": "playwright",
+        "error": "rate limited after 5 attempts"
+      }
+    ]
+  }
+}

@@ -72,11 +72,21 @@ def cmd_diagnose(args: argparse.Namespace) -> int:
             applied = dry_run(diagnosis.patch, lambda p: _local_file(root, p))
             result.patch_status = "valid" if applied.ok else "invalid"
             result.patch_error = applied.error
+            if applied.ok and args.verify_cmd:
+                from .verify import run_patched
+
+                v = run_patched(root, applied.files, args.verify_cmd)
+                result.verify_cmd = args.verify_cmd
+                result.patch_status = "verified" if v.passed else "tests_fail"
+                if not v.passed:
+                    result.patch_error = f"`{args.verify_cmd}` exited {v.returncode}"
+                print(f"[mender] patched copy: `{args.verify_cmd}` "
+                      f"{'passed' if v.passed else 'FAILED'}", file=sys.stderr)
 
     if args.patch_out:
-        if result.patch_status == "valid":
+        if result.patch_status in ("valid", "verified"):
             Path(args.patch_out).write_text(result.diagnosis.patch.rstrip("\n") + "\n")
-            print(f"[mender] verified patch written to {args.patch_out}", file=sys.stderr)
+            print(f"[mender] patch written to {args.patch_out}", file=sys.stderr)
         else:
             print(f"[mender] no verified patch ({result.patch_status}: {result.patch_error})",
                   file=sys.stderr)
@@ -112,7 +122,8 @@ def main(argv: list[str] | None = None) -> int:
     diag.add_argument("--no-llm", action="store_true", help="heuristics only, no API call")
     diag.add_argument("--provider", choices=["claude", "gemini"], help="override MENDER_PROVIDER")
     diag.add_argument("--json", action="store_true", help="print the diagnosis as JSON")
-    diag.add_argument("--patch-out", help="write the patch here if it applies cleanly")
+    diag.add_argument("--patch-out", help="write the patch here if it applies (and passes)")
+    diag.add_argument("--verify-cmd", help="run this in a patched scratch copy, e.g. 'pytest -q'")
 
     args = parser.parse_args(argv)
     if args.cmd == "serve":

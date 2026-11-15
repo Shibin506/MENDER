@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     provider: str = "claude"
     gemini_model: str = "gemini-3.5-flash"
     gemini_api_key: str = ""
+    # "low" | "medium" | "high"; empty uses the model default. Lower is faster.
+    gemini_reasoning_effort: str = ""
 
     # Claude
     model: str = "claude-opus-5-5"

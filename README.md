@@ -9,7 +9,7 @@
   <a href="https://github.com/Shibin506/mender/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Shibin506/mender/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776ab?logo=python&logoColor=white">
   <img alt="Postgres" src="https://img.shields.io/badge/queue-Postgres%20SKIP%20LOCKED-336791?logo=postgresql&logoColor=white">
-  <img alt="Claude" src="https://img.shields.io/badge/model-Claude-d97757">
+  <img alt="Claude or Gemini" src="https://img.shields.io/badge/model-Claude%20%7C%20Gemini-d97757">
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-16a34a"></a>
 </p>
 
@@ -86,7 +86,7 @@ flowchart LR
 | GitHub client | Signs an RS256 app JWT, then mints and caches installation tokens until 5 min before they expire. Fetches the failed jobs and failing step, follows the log redirect, falls back to a commit→PR lookup for fork PRs, and edits its own comment instead of posting new ones. | `mender/github.py` |
 | Log extraction | Strips timestamps, ANSI codes and runner noise, then scores each line against ~30 failure signatures (pytest, Jest, Vitest, tsc, ESLint, Go, Rust, Gradle, mypy, Ruff, npm, pip, plus OOM, timeout, network, secrets). It grows context windows around those lines, merges them, ranks them by score density and keeps what fits a character budget. It also pulls out repo-relative `file:line` references. | `mender/logparse.py` |
 | Classification | Weighted signature groups decide the category. Transient infrastructure errors with no code-level evidence take the **no-model fast path**. | `mender/classify.py` |
-| Diagnosis | Claude receives the excerpts, the PR diff (cut at file boundaries, and the model is told when it was cut) and the files the log names that the PR also changed. It returns a typed `Diagnosis` through structured outputs. The server-side refusal fallback is enabled, and transient API errors re-queue the job. | `mender/diagnose.py` |
+| Diagnosis | The model (Claude, or Gemini via `MENDER_PROVIDER=gemini`) receives the excerpts, the PR diff (cut at file boundaries, and the model is told when it was cut) and the files the log names that the PR also changed. It returns a typed `Diagnosis` through structured outputs (a strict JSON schema on both backends). On Claude the server-side refusal fallback is enabled. Rate limits and overloads on either backend re-queue the job. | `mender/diagnose.py` |
 | Patch check | A small unified-diff parser and applier that matches content exactly but tolerates line offsets, like `git apply` does. A patch that doesn't apply is dropped. | `mender/patch.py` |
 | Comment | One sticky comment per PR. @-mentions in model or log text are neutralised, and code fences are lengthened so log content can't break out of them. | `mender/render.py` |
 
@@ -95,7 +95,7 @@ flowchart LR
 - **Postgres as the queue.** A single dependency, transactional enqueue with dedup, and horizontal workers. `tests/test_queue_postgres.py` races 8 workers over 300 jobs and asserts each job is claimed exactly once. With `SKIP LOCKED` removed, the same test fails: one job is claimed 8 times.
 - **Extraction before the model.** Typical failed-job logs here are ~3k lines. The extractor keeps about 0.3% of the characters (eval below), which keeps cost per diagnosis in cents and gives the model a sharper input.
 - **Skip the model when it can't help.** A registry rate limit doesn't need a frontier model. The flaky fast path is tuned for precision: on both eval sets it never skipped the model for a real code failure.
-- **Never post an unverified patch.** Models write diffs whose context lines don't quite match the file. Mender applies every patch to the head commit's files first, and only shows patches that apply.
+- **Never post an unverified patch.** Models write diffs whose context lines don't quite match the file. Mender applies every patch to the head commit's files first, and only shows patches that apply. Applying isn't the same as being right, so `mender diagnose --verify-cmd "pytest -q"` also runs your tests on a patched scratch copy and hides the patch if they still fail. In testing, this caught a Gemini patch that applied cleanly but added the two discounts instead of compounding them.
 - **Untrusted input.** Anyone who can open a PR controls the log, diff and file contents. They go in tagged blocks, and the system prompt tells the model to treat them as data. The output is plain text in a comment, never executed, and the bot only edits comments that a bot wrote, not ones where someone pasted its marker.
 - **Prompt layout for caching.** Content that is stable per commit (diff, files) comes before content that changes per run (the log). Re-runs on the same head commit can then reuse the cached prefix.
 
@@ -116,7 +116,19 @@ flowchart LR
 
 The tuning set covers pytest, Jest, Go, Rust, tsc, ESLint, Ruff, mypy, npm, pip, Gradle, Docker, OOM, timeouts and missing secrets. I wrote the held-out set *after* tuning and scored it once. The numbers above are as measured. The held-out misses are formats the heuristics have never seen: Black, pnpm lockfiles, apt mirror 404s, `command not found` and Clippy. The important result is that extraction kept the evidence in every held-out case and the fast path never misfired, so those cases still reach the model with the right lines. The heuristic label is only a hint for the model.
 
-Run the full pipeline, including Claude, with `python eval/run_eval.py --set all --llm`. That also reports model category accuracy, culprit-file accuracy, the patch apply rate, cost per diagnosis and p50 latency. It makes one API call per case.
+### Model step
+
+`python eval/run_eval.py --set all --llm` sends every case through the model as well. Results for **Gemini 3.5 Flash** on the free tier, run on 2026-11-15 (raw output in `eval/reports/`):
+
+| Metric | Result |
+|---|---|
+| Cases answered | 26 of 30 (the other 4 hit the free tier's 20-requests-per-day limit and are not scored) |
+| Failure type correct | **25 / 26** (the miss: it called a mypy error "lint", where the answer key says "build error") |
+| File to fix named correctly | **17 / 19** (the misses: a Go test and a Jest snapshot, where the file to fix isn't shown anywhere in the case) |
+| Patches drafted · applied cleanly | 2 · **2** |
+| Median latency | 5.8 s |
+
+The eval cases have no PR diff, and only 2 include the source files, so the patch numbers are thin. The live GitHub path also sends the diff and the files the log points at. Claude has not been run on this eval yet; the same command does it with `MENDER_PROVIDER=claude` and an Anthropic key.
 
 ## Running it
 
@@ -125,7 +137,7 @@ Register an app from `app.yml`, or in **Settings → Developer settings → GitH
 
 ### 2. Configure and start
 ```bash
-cp .env.example .env        # app id, webhook secret, ANTHROPIC_API_KEY
+cp .env.example .env        # app id, webhook secret, and ANTHROPIC_API_KEY or MENDER_PROVIDER=gemini + MENDER_GEMINI_API_KEY
 docker compose up --build   # Postgres + API on :8000 + 2 workers
 ```
 For local development, expose port 8000 with a tunnel such as `cloudflared tunnel --url http://localhost:8000`. Set `MENDER_DRY_RUN=true` to log comments instead of posting them, and `MENDER_AUTO_RERUN_FLAKY=true` to re-run flaky jobs once.
@@ -135,6 +147,8 @@ For local development, expose port 8000 with a tunnel such as `cloudflared tunne
 pip install -e ".[dev]"
 mender diagnose --log failed-job.log --repo-root ~/code/myrepo --base origin/main
 mender diagnose --log failed-job.log --no-llm      # extraction + heuristics only, free
+mender diagnose --log ci.log --base main --verify-cmd "pytest -q" --patch-out fix.patch
+                                                   # write the fix only if your tests pass with it
 ```
 
 ### Endpoints
@@ -147,7 +161,7 @@ mender diagnose --log failed-job.log --no-llm      # extraction + heuristics onl
 
 ## Development
 ```bash
-make install && make test                     # 53 tests on SQLite
+make install && make test                     # 64 tests on SQLite
 MENDER_TEST_POSTGRES_URL=postgresql+psycopg://… pytest   # full suite + concurrency test on Postgres
 make eval
 ```
@@ -165,7 +179,7 @@ eval/           tuning + held-out cases, runner
 
 ## Limitations and next steps
 - Only the first 3 failed jobs in a run are analysed in depth, and the others are listed.
-- Patches are checked for applying, not for passing the tests. Next step: push the patch to a scratch branch and let CI confirm it.
+- On the GitHub App path, patches are checked for applying, not yet for passing the tests (`--verify-cmd` does that locally). Next step: push the patch to a scratch branch and let CI confirm it.
 - Feedback reactions are requested but not yet collected back into the eval set.
 - A per-repo config file for ignore lists and budgets.
 
